@@ -1,0 +1,274 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package game;
+
+import entities.Bullet;
+import entities.Player;
+import input.KeyboardInput;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.util.ArrayList;
+import javax.swing.JPanel;
+
+/**
+ *
+ * @author Usuario
+ */
+public class GamePanel extends JPanel implements Runnable{
+    
+    final int screenWidth = 800;
+    final int ScreenHeigth = 600;
+    Thread gameThread;
+    
+    KeyboardInput keyH = new KeyboardInput();
+    
+    Player player1 = new Player(100, 100, Color.RED);
+    Player player2 = new Player(600, 400, Color.BLUE);
+    
+    boolean player1Alive  = true;
+    boolean player2Alive  = true;
+    
+    int player1ShootCooldown = 0;
+    int player2ShootCooldown = 0;
+    
+    ArrayList<Bullet> bullets = new ArrayList<>();
+    
+    public GamePanel(){
+        this.setPreferredSize(new Dimension(screenWidth,ScreenHeigth));
+        this.setBackground(Color.BLACK);
+        this.setDoubleBuffered(true); 
+        this.addKeyListener(keyH);
+        this.setFocusable(true);
+    }
+    
+    public void startGameThread(){
+        gameThread = new Thread(this);
+        gameThread.start();
+    }
+
+    @Override
+    public void run() {
+        double drawInterval = 1000000000 / 60;
+        double delta = 0;
+        long lastTime = System.nanoTime();
+        long currentTime;
+        while (gameThread != null){
+            currentTime = System.nanoTime();
+            delta += (currentTime - lastTime) / drawInterval;
+            lastTime = currentTime;
+            
+            if (delta >= 1){
+                update();
+                repaint();
+                delta--;
+            }
+        }
+    }
+
+    private void update() {
+        player1.updateHitbox();
+        player2.updateHitbox();
+        moverJugador1(player1);
+        moverJugador2(player2);
+        limitesPantalla(player1);
+        limitesPantalla(player2);
+        dispararJ1();
+        dispararJ2();
+        gestionBullets();
+        
+    }
+    
+    public void limitesPantalla(Player py){
+        if (py.x < 0){
+            py.x = 0;
+        }
+        if(py.y < 0){
+            py.y = 0;
+        }        
+        if (py.x > screenWidth - py.size){
+            py.x = screenWidth - py.size;
+        }
+        if (py.y > ScreenHeigth - py.size){
+            py.y = ScreenHeigth - py.size;
+        }
+    }
+    public void moverJugador1(Player py){
+        if (keyH.upPressed){
+            py.y -= py.speed;
+            py.direction = "up";
+        }
+        if (keyH.downPressed){
+            py.y += py.speed;
+            py.direction = "down";
+        }
+        if (keyH.leftPressed){
+            py.x -= py.speed;
+            py.direction = "left";
+        }
+        if (keyH.rightPressed){
+            py.x += py.speed;
+            py.direction = "right";
+        }
+    }
+    public void moverJugador2(Player py){
+        if (keyH.up2Pressed){
+            py.y -= py.speed;
+            py.direction = "up";
+        }
+        if (keyH.down2Pressed){
+            py.y += py.speed;
+            py.direction = "down";
+        }
+        if (keyH.left2Pressed){
+            py.x -= py.speed;
+            py.direction = "left";
+        }
+        if (keyH.right2Pressed){
+            py.x += py.speed;
+            py.direction = "right";
+        }
+    }
+    public void dispararJ1(){
+        
+        int speedX = 0;
+        int speedY = 0;
+
+        if(player1ShootCooldown > 0) {
+            player1ShootCooldown--;
+        }
+        if(player1.direction.equals("up")) {
+            speedY = -10;
+        }
+
+        if(player1.direction.equals("down")) {
+            speedY = 10;
+        }
+
+        if(player1.direction.equals("left")) {
+            speedX = -10;
+        }
+        if(player1.direction.equals("right")) {
+            speedX = 10;
+        }
+        
+        if(keyH.shootPressed && player1ShootCooldown == 0) {
+            bullets.add(new Bullet(
+                player1.x + player1.size / 2,
+                player1.y + player1.size / 2,
+                speedX,
+                speedY,
+                Color.RED
+                )
+            );
+            // contrala velocidad de disparo
+            player1ShootCooldown = 10;
+        }      
+    }
+    public void dispararJ2(){
+        
+        int speedX = 0;
+        int speedY = 0;
+        
+        if (player2ShootCooldown > 0) {
+            player2ShootCooldown--;
+        }
+        
+        if(player2.direction.equals("up")) {
+            speedY = -10;
+        }
+
+        if(player2.direction.equals("down")) {
+            speedY = 10;
+        }
+
+        if(player2.direction.equals("left")) {
+            speedX = -10;
+        }
+        if(player2.direction.equals("right")) {
+            speedX = 10;
+        }
+        
+        if(keyH.shoot2Pressed && player2ShootCooldown == 0) {
+            bullets.add(new Bullet(
+                player2.x + player2.size / 2,
+                player2.y + player2.size / 2,
+                speedX,
+                speedY,
+                Color.BLUE
+                )
+            );
+            // contrala velocidad de disparo
+            player2ShootCooldown = 10;
+        }        
+    }
+    public void gestionBullets(){
+        for(int i = 0; i < bullets.size(); i++) {
+            
+            Bullet bullet = bullets.get(i);
+            bullet.update();
+            
+            if(bullet.x < 0 ||
+                bullet.x > screenWidth ||
+                bullet.y < 0 ||
+                bullet.y > ScreenHeigth) {
+                bullets.remove(i);
+                i--;
+             }
+
+            if(bullet.color == Color.RED &&
+               bullet.solidArea.intersects(player2.solidArea)) {
+
+                player2.health--;
+                bullets.remove(i);
+                i--;
+                if (player2.health <= 0){
+                    player2Alive = false;
+                }
+            }
+
+            if(bullet.color == Color.BLUE &&
+               bullet.solidArea.intersects(player1.solidArea)) {
+
+                player1.health--;
+                bullets.remove(i);
+                i--;
+                if (player1.health <= 0){
+                    player1Alive = false;
+                }
+            }
+        }
+    }
+   
+    @Override
+    protected void paintComponent(Graphics g){
+        super.paintComponent(g);
+        g.setColor(Color.WHITE);
+        g.drawString("Arena Shooter", 350, 300);
+        
+        Graphics2D g2 = (Graphics2D) g;
+        
+        if(player1Alive) {
+            player1.draw(g2);
+        }
+
+        if(player2Alive) {
+            player2.draw(g2);
+        }
+        
+        g2.setColor(Color.WHITE);
+        g2.drawString("Player 1 HP: " + player1.health, 20, 20);
+        g2.drawString("Player 2 HP: " + player2.health, 650, 20);
+        
+        for (int i =0; i<bullets.size();i++){
+            bullets.get(i).draw(g2);
+        }
+        
+        g2.dispose();
+       
+                
+    }
+}
