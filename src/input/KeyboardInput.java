@@ -7,6 +7,7 @@ package input;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+
 /**
  *
  * @author Usuario
@@ -28,6 +29,9 @@ public class KeyboardInput implements KeyListener{
     //disparos
     public boolean shootPressed;
     public boolean shoot2Pressed;
+    
+    // Variable para el reinicio
+    public boolean enterPressed;
     
     public void moverJ1(int code, boolean bool){
         if (code == KeyEvent.VK_W){
@@ -74,7 +78,11 @@ public class KeyboardInput implements KeyListener{
             shoot2Pressed = bool;
         }        
     }
-
+    public void revisarReinicio(int code, boolean bool) {
+        if (code == KeyEvent.VK_R) {
+            enterPressed = bool; // Mapeamos la tecla R a tu variable del GamePanel
+        }
+    }
     @Override
     public void keyTyped(KeyEvent e) {
         
@@ -82,10 +90,12 @@ public class KeyboardInput implements KeyListener{
 
     @Override
     public void keyPressed(KeyEvent e) {
+       
         int code = e.getKeyCode();
         moverJ1(code, true);
         moverJ2(code, true);
         disparar(code, true);
+        revisarReinicio(code, true);
     }
 
     @Override
@@ -95,6 +105,7 @@ public class KeyboardInput implements KeyListener{
         moverJ1(code, false);
         moverJ2(code, false);
         disparar(code, false);
+        revisarReinicio(code, false);
     }
     
 }
