@@ -13,6 +13,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import javax.swing.JPanel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  *
@@ -23,14 +25,18 @@ public class GamePanel extends JPanel implements Runnable{
     final int screenWidth = 800;
     final int ScreenHeigth = 600;
     Thread gameThread;
-    
+
     KeyboardInput keyH = new KeyboardInput();
     
-    Player player1 = new Player(100, 100, Color.RED);
-    Player player2 = new Player(600, 400, Color.BLUE);
+    Player player1 = new Player(600, 400, "/sprites/player2_idle .png");
+    Player player2 = new Player(100, 100, "/sprites/player1_idle.png");
+    
     
     boolean player1Alive  = true;
     boolean player2Alive  = true;
+    boolean showTitle = true;
+    boolean gameOver = false;
+    String winner = "";
     
     int player1ShootCooldown = 0;
     int player2ShootCooldown = 0;
@@ -43,6 +49,14 @@ public class GamePanel extends JPanel implements Runnable{
         this.setDoubleBuffered(true); 
         this.addKeyListener(keyH);
         this.setFocusable(true);
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (gameOver) {
+                    reiniciarJuego();
+                }
+            }
+        });
     }
     
     public void startGameThread(){
@@ -70,16 +84,47 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void update() {
-        player1.updateHitbox();
-        player2.updateHitbox();
-        moverJugador1(player1);
-        moverJugador2(player2);
-        limitesPantalla(player1);
-        limitesPantalla(player2);
-        dispararJ1();
-        dispararJ2();
-        gestionBullets();
+     if (gameOver) {
+        return; 
+    }
+
+    if (keyH.upPressed || keyH.downPressed || keyH.leftPressed || keyH.rightPressed || keyH.shootPressed ||
+        keyH.up2Pressed || keyH.down2Pressed || keyH.left2Pressed || keyH.right2Pressed || keyH.shoot2Pressed) {
+        showTitle = false;
+    }
+
+    player1.updateHitbox();
+    player2.updateHitbox();
+    moverJugador1(player1);
+    moverJugador2(player2);
+    limitesPantalla(player1);
+    limitesPantalla(player2);
+ 
+    dispararJ1();
+    dispararJ2();
+    gestionBullets();
+    
+    if (!player1Alive) {
+        gameOver = true;
+        winner = "¡JUGADOR 2 (AZUL) GANÓ!";
+    } else if (!player2Alive) {
+        gameOver = true;
+        winner = "¡JUGADOR 1 (ROJO) GANÓ!";
+    }
+    }
+    
+    public void reiniciarJuego() {
+         player1 = new Player(600, 400, "/sprites/player2_idle .png");
+         player2 = new Player(100, 100, "/sprites/player1_idle.png");
         
+        player1Alive = true;
+        player2Alive = true;
+        bullets.clear();
+        player1ShootCooldown = 0;
+        player2ShootCooldown = 0;
+        gameOver = false;
+        winner = "";
+        showTitle = true;
     }
     
     public void limitesPantalla(Player py){
@@ -245,9 +290,11 @@ public class GamePanel extends JPanel implements Runnable{
    
     @Override
     protected void paintComponent(Graphics g){
-        super.paintComponent(g);
-        g.setColor(Color.WHITE);
-        g.drawString("Arena Shooter", 350, 300);
+   super.paintComponent(g);
+        if (showTitle) {
+            g.setColor(Color.WHITE);
+            g.drawString("Arena Shooter", 350, 300);
+        }
         
         Graphics2D g2 = (Graphics2D) g;
         
@@ -263,12 +310,23 @@ public class GamePanel extends JPanel implements Runnable{
         g2.drawString("Player 1 HP: " + player1.health, 20, 20);
         g2.drawString("Player 2 HP: " + player2.health, 650, 20);
         
-        for (int i =0; i<bullets.size();i++){
+        for (int i = 0; i < bullets.size(); i++){
             bullets.get(i).draw(g2);
         }
         
+   
+        if (gameOver) {
+    g2.setColor(new Color(0, 0, 0, 180)); 
+    g2.fillRect(0, 0, screenWidth, ScreenHeigth);
+
+    g2.setColor(Color.YELLOW);
+    g2.drawString(winner, 320, 260);
+
+        g2.setColor(Color.WHITE);
+  
+        g2.drawString("Haz CLIC en la pantalla para volver a jugar", 260, 320);
+    }
+        
         g2.dispose();
-       
-                
     }
 }
