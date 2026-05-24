@@ -5,6 +5,7 @@
 package game;
 
 import entities.Bullet;
+import entities.Obstacle;
 import entities.Player;
 import input.KeyboardInput;
 import java.awt.Color;
@@ -42,6 +43,7 @@ public class GamePanel extends JPanel implements Runnable{
     int player2ShootCooldown = 0;
     
     ArrayList<Bullet> bullets = new ArrayList<>();
+    ArrayList<Obstacle> obstacles = new ArrayList<>();
     
     public GamePanel(){
         this.setPreferredSize(new Dimension(screenWidth,ScreenHeigth));
@@ -49,6 +51,12 @@ public class GamePanel extends JPanel implements Runnable{
         this.setDoubleBuffered(true); 
         this.addKeyListener(keyH);
         this.setFocusable(true);
+        
+        //obstaculos
+        obstacles.add(new Obstacle(300, 200, 200, 40));
+        obstacles.add(new Obstacle(150, 400, 40, 120));
+        obstacles.add(new Obstacle(600, 100, 40, 150));
+        
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -95,10 +103,19 @@ public class GamePanel extends JPanel implements Runnable{
 
     player1.updateHitbox();
     player2.updateHitbox();
+    
+    player1.oldX = player1.x;
+    player1.oldY = player1.y;
+
+    player2.oldX = player2.x;
+    player2.oldY = player2.y;    
+    
     moverJugador1(player1);
     moverJugador2(player2);
     limitesPantalla(player1);
     limitesPantalla(player2);
+    
+    colision_obstaculo();
  
     dispararJ1();
     dispararJ2();
@@ -111,6 +128,33 @@ public class GamePanel extends JPanel implements Runnable{
         gameOver = true;
         winner = "¡JUGADOR 1 (ROJO) GANÓ!";
     }
+    }
+    
+    private void colision_obstaculo(){
+        
+        for (int i = 0; i < obstacles.size(); i++) {
+
+            Obstacle obstacle = obstacles.get(i);
+
+            player1.updateHitbox();
+
+            if (player1.solidArea.intersects(obstacle.solidArea)) {
+
+                player1.x = player1.oldX;
+
+                player1.y = player1.oldY;
+            }
+
+            player2.updateHitbox();
+
+            if (player2.solidArea.intersects(obstacle.solidArea)) {
+
+                player2.x = player2.oldX;
+
+                player2.y = player2.oldY;
+            }
+        }
+        
     }
     
     public void reiniciarJuego() {
@@ -263,6 +307,18 @@ public class GamePanel extends JPanel implements Runnable{
                 bullets.remove(i);
                 i--;
              }
+            for (int j = 0; j < obstacles.size(); j++) {
+
+                if (bullet.solidArea.intersects(
+                        obstacles.get(j).solidArea)) {
+
+                    bullets.remove(i);
+
+                    i--;
+
+                    break;
+                }
+            }
 
             if(bullet.color == Color.RED &&
                bullet.solidArea.intersects(player2.solidArea)) {
@@ -290,42 +346,46 @@ public class GamePanel extends JPanel implements Runnable{
    
     @Override
     protected void paintComponent(Graphics g){
-   super.paintComponent(g);
-        if (showTitle) {
-            g.setColor(Color.WHITE);
-            g.drawString("Arena Shooter", 350, 300);
-        }
-        
-        Graphics2D g2 = (Graphics2D) g;
-        
-        if(player1Alive) {
-            player1.draw(g2);
-        }
+        super.paintComponent(g);
+             if (showTitle) {
+                 g.setColor(Color.WHITE);
+                 g.drawString("Arena Shooter", 350, 300);
+             }
 
-        if(player2Alive) {
-            player2.draw(g2);
-        }
-        
-        g2.setColor(Color.WHITE);
-        g2.drawString("Player 1 HP: " + player1.health, 20, 20);
-        g2.drawString("Player 2 HP: " + player2.health, 650, 20);
-        
-        for (int i = 0; i < bullets.size(); i++){
-            bullets.get(i).draw(g2);
-        }
-        
-   
-        if (gameOver) {
-    g2.setColor(new Color(0, 0, 0, 180)); 
-    g2.fillRect(0, 0, screenWidth, ScreenHeigth);
+             Graphics2D g2 = (Graphics2D) g;
+             
+             for(int i = 0; i < obstacles.size(); i++) {
+                obstacles.get(i).draw(g2);
+            }
 
-    g2.setColor(Color.YELLOW);
-    g2.drawString(winner, 320, 260);
+             if(player1Alive) {
+                 player1.draw(g2);
+             }
 
-        g2.setColor(Color.WHITE);
-  
-        g2.drawString("Haz CLIC en la pantalla para volver a jugar", 260, 320);
-    }
+             if(player2Alive) {
+                 player2.draw(g2);
+             }
+
+             g2.setColor(Color.WHITE);
+             g2.drawString("Player 1 HP: " + player1.health, 20, 20);
+             g2.drawString("Player 2 HP: " + player2.health, 650, 20);
+
+             for (int i = 0; i < bullets.size(); i++){
+                 bullets.get(i).draw(g2);
+             }
+
+
+             if (gameOver) {
+         g2.setColor(new Color(0, 0, 0, 180)); 
+         g2.fillRect(0, 0, screenWidth, ScreenHeigth);
+
+         g2.setColor(Color.YELLOW);
+         g2.drawString(winner, 320, 260);
+
+             g2.setColor(Color.WHITE);
+
+             g2.drawString("Haz CLIC en la pantalla para volver a jugar", 260, 320);
+         }
         
         g2.dispose();
     }
