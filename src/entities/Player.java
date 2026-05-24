@@ -14,6 +14,10 @@ import javax.imageio.ImageIO;
 public class Player {
  public int x;
     public int y;
+    
+    public int oldX;
+    public int oldY;
+    
     public int size;
     public int speed;
     
