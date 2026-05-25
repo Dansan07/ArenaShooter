@@ -8,6 +8,7 @@ import entities.Bullet;
 import entities.Obstacle;
 import entities.Player;
 import input.KeyboardInput;
+import input.SerialManager;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -28,6 +29,7 @@ public class GamePanel extends JPanel implements Runnable{
     Thread gameThread;
 
     KeyboardInput keyH = new KeyboardInput();
+    SerialManager serial = new SerialManager();
     
     Player player1 = new Player(600, 400, "/sprites/player2_idle .png");
     Player player2 = new Player(100, 100, "/sprites/player1_idle.png");
@@ -46,6 +48,7 @@ public class GamePanel extends JPanel implements Runnable{
     ArrayList<Obstacle> obstacles = new ArrayList<>();
     
     public GamePanel(){
+        serial.connect();
         this.setPreferredSize(new Dimension(screenWidth,ScreenHeigth));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true); 
@@ -92,42 +95,60 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void update() {
-     if (gameOver) {
-        return; 
-    }
+        if (gameOver) {
+           return; 
+       }
 
-    if (keyH.upPressed || keyH.downPressed || keyH.leftPressed || keyH.rightPressed || keyH.shootPressed ||
-        keyH.up2Pressed || keyH.down2Pressed || keyH.left2Pressed || keyH.right2Pressed || keyH.shoot2Pressed) {
-        showTitle = false;
-    }
+       if (keyH.upPressed || keyH.downPressed || keyH.leftPressed || keyH.rightPressed || keyH.shootPressed ||
+           keyH.up2Pressed || keyH.down2Pressed || keyH.left2Pressed || keyH.right2Pressed || keyH.shoot2Pressed) {
+           showTitle = false;
+       }
 
-    player1.updateHitbox();
-    player2.updateHitbox();
-    
-    player1.oldX = player1.x;
-    player1.oldY = player1.y;
+       player1.updateHitbox();
+       player2.updateHitbox();
 
-    player2.oldX = player2.x;
-    player2.oldY = player2.y;    
-    
-    moverJugador1(player1);
-    moverJugador2(player2);
-    limitesPantalla(player1);
-    limitesPantalla(player2);
-    
-    colision_obstaculo();
- 
-    dispararJ1();
-    dispararJ2();
-    gestionBullets();
-    
-    if (!player1Alive) {
-        gameOver = true;
-        winner = "¡JUGADOR 2 (AZUL) GANÓ!";
-    } else if (!player2Alive) {
-        gameOver = true;
-        winner = "¡JUGADOR 1 (ROJO) GANÓ!";
+       player1.oldX = player1.x;
+       player1.oldY = player1.y;
+
+       player2.oldX = player2.x;
+       player2.oldY = player2.y;    
+
+       moverJugador1(player1);
+       moverJugador2(player2);
+       limitesPantalla(player1);
+       limitesPantalla(player2);
+
+       colision_obstaculo();
+
+       dispararJ1();
+       dispararJ2();
+       gestionBullets();
+
+       if (!player1Alive) {
+           gameOver = true;
+           winner = "¡JUGADOR 2 (AZUL) GANÓ!";
+       } else if (!player2Alive) {
+           gameOver = true;
+           winner = "¡JUGADOR 1 (ROJO) GANÓ!";
+       }
     }
+    
+    public void movimiento_joystick(){
+        if(serial.xValue < 400) {
+            player1.x -= player1.speed;
+        }
+
+        if(serial.xValue > 600) {
+            player1.x += player1.speed;
+        }
+
+        if(serial.yValue < 400) {
+            player1.y -= player1.speed;
+        }
+
+        if(serial.yValue > 600) {
+            player1.y += player1.speed;
+        }
     }
     
     private void colision_obstaculo(){
