@@ -7,7 +7,10 @@ package game;
 import entities.Box;
 import entities.Bullet;
 import entities.Player;
+import input.AccelerometerInput;
+import input.JoystickInput;
 import input.KeyboardInput;
+import input.SerialManager;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -31,8 +34,11 @@ public class GamePanel extends JPanel implements Runnable{
     Thread gameThread;
 
     KeyboardInput keyH = new KeyboardInput();
+    SerialManager serial = new SerialManager();
+    JoystickInput joystick = new JoystickInput(serial);
+    AccelerometerInput accel = new AccelerometerInput(serial);
 
-     Player player1 = new Player(80,  270,"/sprites/player2_idle.png"); 
+    Player player1 = new Player(80,  270, "/sprites/player2_idle.png");
     Player player2 = new Player(670, 270, "/sprites/player1_idle.png");
 
     boolean player1Alive = true;
@@ -49,11 +55,13 @@ public class GamePanel extends JPanel implements Runnable{
     BufferedImage background;
 
     public GamePanel() {
+        serial.connect();
         this.setPreferredSize(new Dimension(screenWidth, ScreenHeigth));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true);
         this.addKeyListener(keyH);
         this.setFocusable(true);
+
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -100,25 +108,37 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     private void update() {
-        if (gameOver) return;
+     if (gameOver) return;
 
-        if (keyH.upPressed || keyH.downPressed || keyH.leftPressed || keyH.rightPressed || keyH.shootPressed
-                || keyH.up2Pressed || keyH.down2Pressed || keyH.left2Pressed || keyH.right2Pressed || keyH.shoot2Pressed) {
-            showTitle = false;
-        }
+    // Combina teclado + joystick para player1
+    boolean p1Up    = keyH.upPressed    || joystick.isUp();
+    boolean p1Down  = keyH.downPressed  || joystick.isDown();
+    boolean p1Left  = keyH.leftPressed  || joystick.isLeft();
+    boolean p1Right = keyH.rightPressed || joystick.isRight();
 
-        moverConColision(player1, keyH.upPressed, keyH.downPressed, keyH.leftPressed, keyH.rightPressed);
-        moverConColision(player2, keyH.up2Pressed, keyH.down2Pressed, keyH.left2Pressed, keyH.right2Pressed);
+    // Combina teclado + acelerómetro para player2
+    boolean p2Up    = keyH.up2Pressed    || accel.isUp();
+    boolean p2Down  = keyH.down2Pressed  || accel.isDown();
+    boolean p2Left  = keyH.left2Pressed  || accel.isLeft();
+    boolean p2Right = keyH.right2Pressed || accel.isRight();
 
-        limitesPantalla(player1);
-        limitesPantalla(player2);
+    if (p1Up || p1Down || p1Left || p1Right || keyH.shootPressed
+            || p2Up || p2Down || p2Left || p2Right || keyH.shoot2Pressed) {
+        showTitle = false;
+    }
 
-        dispararJ1();
-        dispararJ2();
-        gestionBullets();
+    moverConColision(player1, p1Up, p1Down, p1Left, p1Right);
+    moverConColision(player2, p2Up, p2Down, p2Left, p2Right);
 
-        if (!player1Alive) { gameOver = true; winner = "¡JUGADOR 2 (AZUL) GANÓ!"; }
-        else if (!player2Alive) { gameOver = true; winner = "¡JUGADOR 1 (ROJO) GANÓ!"; }
+    limitesPantalla(player1);
+    limitesPantalla(player2);
+
+    dispararJ1();
+    dispararJ2();
+    gestionBullets();
+
+    if (!player1Alive) { gameOver = true; winner = "¡JUGADOR 2 (AZUL) GANÓ!"; }
+    else if (!player2Alive) { gameOver = true; winner = "¡JUGADOR 1 (ROJO) GANÓ!"; }
     }
 
     private void moverConColision(Player py,
@@ -152,8 +172,8 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public void reiniciarJuego() {
-        player1 = new Player(600, 400, "/sprites/player2_idle.png");
-        player2 = new Player(100, 100, "/sprites/player1_idle.png");
+        player1 = new Player(80,  270, "/sprites/player2_idle.png");
+        player2 = new Player(670, 270, "/sprites/player1_idle.png");
 
         player1Alive = true;
         player2Alive = true;
@@ -174,36 +194,36 @@ public class GamePanel extends JPanel implements Runnable{
 
     public void dispararJ1() {
         int speedX = 0, speedY = 0;
-        if (player1ShootCooldown > 0) player1ShootCooldown--;
-        if (player1.direction.equals("up"))    speedY = -10;
-        if (player1.direction.equals("down"))  speedY =  10;
-        if (player1.direction.equals("left"))  speedX = -10;
-        if (player1.direction.equals("right")) speedX =  10;
+    if (player1ShootCooldown > 0) player1ShootCooldown--;
+    if (player1.direction.equals("up"))    speedY = -10;
+    if (player1.direction.equals("down"))  speedY =  10;
+    if (player1.direction.equals("left"))  speedX = -10;
+    if (player1.direction.equals("right")) speedX =  10;
 
-        if (keyH.shootPressed && player1ShootCooldown == 0) {
-            bullets.add(new Bullet(
-                player1.x + player1.size / 2,
-                player1.y + player1.size / 2,
-                speedX, speedY, Color.RED));
-            player1ShootCooldown = 10;
-        }
+    if ((keyH.shootPressed || joystick.isShoot()) && player1ShootCooldown == 0) {
+        bullets.add(new Bullet(
+            player1.x + player1.size / 2,
+            player1.y + player1.size / 2,
+            speedX, speedY, Color.RED));
+        player1ShootCooldown = 10;
+    }
     }
 
     public void dispararJ2() {
         int speedX = 0, speedY = 0;
-        if (player2ShootCooldown > 0) player2ShootCooldown--;
-        if (player2.direction.equals("up"))    speedY = -10;
-        if (player2.direction.equals("down"))  speedY =  10;
-        if (player2.direction.equals("left"))  speedX = -10;
-        if (player2.direction.equals("right")) speedX =  10;
+    if (player2ShootCooldown > 0) player2ShootCooldown--;
+    if (player2.direction.equals("up"))    speedY = -10;
+    if (player2.direction.equals("down"))  speedY =  10;
+    if (player2.direction.equals("left"))  speedX = -10;
+    if (player2.direction.equals("right")) speedX =  10;
 
-        if (keyH.shoot2Pressed && player2ShootCooldown == 0) {
-            bullets.add(new Bullet(
-                player2.x + player2.size / 2,
-                player2.y + player2.size / 2,
-                speedX, speedY, Color.BLUE));
-            player2ShootCooldown = 10;
-        }
+    if (keyH.shoot2Pressed && player2ShootCooldown == 0) {
+        bullets.add(new Bullet(
+            player2.x + player2.size / 2,
+            player2.y + player2.size / 2,
+            speedX, speedY, Color.BLUE));
+        player2ShootCooldown = 10;
+    }
     }
 
     public void gestionBullets() {

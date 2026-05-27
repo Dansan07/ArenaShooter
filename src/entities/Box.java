@@ -38,7 +38,7 @@ public class Box {
         if (texture != null) {
             g2.drawImage(texture, x, y, width, height, null);
         } else {
-            g2.setColor(new Color(139, 90, 43));   // marrón madera
+            g2.setColor(new Color(139, 90, 43));   
             g2.fillRect(x, y, width, height);
             g2.setColor(new Color(80, 50, 20));
             g2.drawRect(x, y, width, height);
