@@ -43,4 +43,5 @@ public class Bullet {
         g2.setColor(color);
         g2.fillOval(x, y, size, size);
     }
+    
 }
