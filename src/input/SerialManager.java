@@ -4,6 +4,7 @@
  */
 package input;
 
+
 import jssc.SerialPort;
 import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
@@ -17,12 +18,10 @@ public class SerialManager {
    private SerialPort serialPort;
     private String buffer = "";
 
-    // Joystick (jugador 1) — valores 0..1023
     public int joyX = 512;
     public int joyY = 512;
     public boolean joyButton = false;
 
-    // Acelerómetro (jugador 2) — valores en mg o raw según tu sensor
     public int accelX = 0;
     public int accelY = 0;
 
@@ -33,7 +32,6 @@ public class SerialManager {
             return;
         }
 
-        // Toma el primer puerto disponible; cámbialo si necesitas uno específico
         String portName = ports[0];
         serialPort = new SerialPort(portName);
 
@@ -64,10 +62,6 @@ public class SerialManager {
         }
     }
 
-    /**
-     * Formato esperado desde Arduino:
-     * "JX:512,JY:300,JB:0,AX:150,AY:-80\n"
-     */
     private void procesarBuffer() {
         int idx;
         while ((idx = buffer.indexOf('\n')) != -1) {
@@ -106,5 +100,5 @@ public class SerialManager {
                 e.printStackTrace();
             }
         }
-    } 
+    }
 }
