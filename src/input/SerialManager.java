@@ -1,21 +1,14 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package input;
 
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 
-import jssc.SerialPort;
-import jssc.SerialPortEvent;
-import jssc.SerialPortEventListener;
-import jssc.SerialPortException;
-import jssc.SerialPortList;
 /**
- *
  * @author Usuario
  */
 public class SerialManager {
-   private SerialPort serialPort;
+    private SerialPort serialPort;
     private String buffer = "";
 
     public int joyX = 512;
@@ -26,40 +19,55 @@ public class SerialManager {
     public int accelY = 0;
 
     public void connect() {
-        String[] ports = SerialPortList.getPortNames();
+        // Obtenemos los puertos disponibles usando jSerialComm
+        SerialPort[] ports = SerialPort.getCommPorts();
         if (ports.length == 0) {
             System.out.println("No se encontró puerto serial.");
             return;
         }
 
-        String portName = ports[0];
-        serialPort = new SerialPort(portName);
+        // Seleccionamos el primer puerto disponible (ej: COM3)
+        serialPort = ports[0]; 
 
-        try {
-            serialPort.openPort();
-            serialPort.setParams(
-                SerialPort.BAUDRATE_9600,
-                SerialPort.DATABITS_8,
-                SerialPort.STOPBITS_1,
-                SerialPort.PARITY_NONE
-            );
-            serialPort.addEventListener(new SerialPortEventListener() {
-                @Override
-                public void serialEvent(SerialPortEvent event) {
-                    if (event.isRXCHAR()) {
-                        try {
-                            buffer += serialPort.readString();
-                            procesarBuffer();
-                        } catch (SerialPortException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-            System.out.println("Conectado a: " + portName);
-        } catch (SerialPortException e) {
-            e.printStackTrace();
+        // Configurar parámetros del puerto (Reemplaza a setParams de JSSC)
+        serialPort.setBaudRate(9600);
+        serialPort.setNumDataBits(8);
+        serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT);
+        serialPort.setParity(SerialPort.NO_PARITY);
+
+        // Intentamos abrir el puerto
+        if (serialPort.openPort()) {
+            System.out.println("Conectado con éxito a: " + serialPort.getSystemPortName());
+        } else {
+            System.out.println("Error al abrir el puerto serial.");
+            return;
         }
+
+        // Configurar el Event Listener usando la estructura de jSerialComm
+        serialPort.addDataListener(new SerialPortDataListener() {
+            @Override
+            public int getListeningEvents() {
+                // Indicamos que queremos escuchar cuando haya datos disponibles para leer (RXCHAR)
+                return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+            }
+
+            @Override
+            public void serialEvent(SerialPortEvent event) {
+                if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
+                    return;
+                }
+                
+                // Leer los bytes entrantes
+                byte[] newData = new byte[serialPort.bytesAvailable()];
+                int numRead = serialPort.readBytes(newData, newData.length);
+                
+                if (numRead > 0) {
+                    // Convertimos los bytes a String y los acumulamos en el buffer
+                    buffer += new String(newData, 0, numRead);
+                    procesarBuffer();
+                }
+            }
+        });
     }
 
     private void procesarBuffer() {
@@ -73,6 +81,7 @@ public class SerialManager {
 
     private void parsearLinea(String linea) {
         try {
+            // Espera una trama como: JX:512,JY:510,JB:0
             String[] partes = linea.split(",");
             for (String parte : partes) {
                 String[] kv = parte.split(":");
@@ -93,11 +102,11 @@ public class SerialManager {
     }
 
     public void disconnect() {
-        if (serialPort != null && serialPort.isOpened()) {
-            try {
-                serialPort.closePort();
-            } catch (SerialPortException e) {
-                e.printStackTrace();
+        if (serialPort != null && serialPort.isOpen()) {
+            if (serialPort.closePort()) {
+                System.out.println("Puerto serial cerrado correctamente.");
+            } else {
+                System.out.println("Error al intentar cerrar el puerto.");
             }
         }
     }
