@@ -6,7 +6,6 @@ package game;
 
 import entities.Box;
 import entities.Bullet;
-import entities.Obstacle;
 import entities.Player;
 import input.AccelerometerInput;
 import input.JoystickInput;
@@ -39,8 +38,8 @@ public class GamePanel extends JPanel implements Runnable{
     JoystickInput joystick = new JoystickInput(serial);
     AccelerometerInput accel = new AccelerometerInput(serial);
 
-    Player player1 = new Player(80,  270, "/sprites/player2_idle.png");
-    Player player2 = new Player(670, 270, "/sprites/player1_idle.png");
+    Player player1 = new Player(80,  270, "/sprites/player2_idle.png", "right");
+    Player player2 = new Player(670, 270, "/sprites/player1_idle.png", "left");
 
     boolean player1Alive = true;
     boolean player2Alive = true;
@@ -169,8 +168,8 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public void reiniciarJuego() {
-        player1 = new Player(80,  270, "/sprites/player2_idle.png");
-        player2 = new Player(670, 270, "/sprites/player1_idle.png");
+        player1 = new Player(80,  270, "/sprites/player2_idle.png", "rigth");
+        player2 = new Player(670, 270, "/sprites/player1_idle.png", "left");
 
         player1Alive = true;
         player2Alive = true;
@@ -192,10 +191,27 @@ public class GamePanel extends JPanel implements Runnable{
     public void dispararJ1() {
         int speedX = 0, speedY = 0;
         if (player1ShootCooldown > 0) player1ShootCooldown--;
+        
         if (player1.direction.equals("up"))    speedY = -10;
         if (player1.direction.equals("down"))  speedY =  10;
         if (player1.direction.equals("left"))  speedX = -10;
         if (player1.direction.equals("right")) speedX =  10;
+
+        if (keyH.upPressed) {
+            speedY = -10;
+        }
+
+        if (keyH.downPressed) {
+            speedY = 10;
+        }
+
+        if (keyH.leftPressed) {
+            speedX = -10;
+        }
+
+        if (keyH.rightPressed) {
+            speedX = 10;
+        }        
 
         if ((keyH.shootPressed || joystick.isShoot()) && player1ShootCooldown == 0) {
             bullets.add(new Bullet(
@@ -213,6 +229,22 @@ public class GamePanel extends JPanel implements Runnable{
         if (player2.direction.equals("down"))  speedY =  10;
         if (player2.direction.equals("left"))  speedX = -10;
         if (player2.direction.equals("right")) speedX =  10;
+        
+        if (keyH.up2Pressed) {
+            speedY = -10;
+        }
+
+        if (keyH.down2Pressed) {
+            speedY = 10;
+        }
+
+        if (keyH.left2Pressed) {
+            speedX = -10;
+        }
+
+        if (keyH.right2Pressed) {
+            speedX = 10;
+        }
 
         if (keyH.shoot2Pressed && player2ShootCooldown == 0) {
             bullets.add(new Bullet(
