@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
  * @author Usuario
  */
 public class Player {
- public int x;
+    public int x;
     public int y;
     
     public int oldX;
@@ -27,13 +27,13 @@ public class Player {
     public int health;
     
    
-    public Player(int x, int y, String imagePath){
+    public Player(int x, int y, String imagePath, String direction){
         this.x = x;
         this.y = y;
         size = 70;
         speed = 5;       
         solidArea = new Rectangle(x, y, size, size);
-        direction = "down";
+        this.direction = direction;
         health = 3;
         
        
